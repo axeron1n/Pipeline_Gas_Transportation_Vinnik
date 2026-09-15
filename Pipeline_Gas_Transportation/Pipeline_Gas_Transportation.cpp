@@ -95,6 +95,45 @@ void editPipeRepairFlag(Pipe& pipe) {
     cout << "Признак обновлен.\n";
 }
 
+void inputStation(CompressorStation& station) {
+    station.name = readLine("Название КС: ");
+    station.shopCount = readNonNegative("Количество цехов: ");
+    station.shopInWork = readIntInRange("Количество цехов в работе (0.." + to_string(station.shopCount) + "): ",
+        0, station.shopCount);
+    station.stationClass = readNonNegative("Класс станции: ");
+}
+
+void printStation(const CompressorStation& station) {
+    cout << "--- КС ---\n"
+        << "Название: " << station.name << "\n"
+        << "Цехов всего: " << station.shopCount << "\n"
+        << "Цехов в работе: " << station.shopInWork << "\n"
+        << "Класс станции: " << station.stationClass << "\n";
+}
+
+void editStationShops(CompressorStation& station) {
+    cout << "1. Запустить цех\n2. Остановить цех\n0. Назад\n";
+    int choice = readIntInRange("Выберите действие: ", 0, 2);
+    if (choice == 1) {
+        if (station.shopInWork < station.shopCount) {
+            ++station.shopInWork;
+            cout << "Цех запущен. В работе: " << station.shopInWork << "/" << station.shopCount << "\n";
+        }
+        else {
+            cout << "Все цехи уже в работе.\n";
+        }
+    }
+    else if (choice == 2) {
+        if (station.shopInWork > 0) {
+            --station.shopInWork;
+            cout << "Цех остановлен. В работе: " << station.shopInWork << "/" << station.shopCount << "\n";
+        }
+        else {
+            cout << "Нет работающих цехов.\n";
+        }
+    }
+}
+
 void printMenu() {
     cout << "\n1. Добавить трубу\n"
         << "2. Добавить КС\n"
@@ -114,9 +153,8 @@ int main() {
 
     Pipe pipe;
     CompressorStation station;
-    (void)station; // переменная пока не используется, добавил в промежуточном варианте, чтобы не было ошибок
-
     bool pipeExists = false;
+    bool stationExists = false;
 
     while (true) {
         printMenu();
@@ -127,13 +165,23 @@ int main() {
             inputPipe(pipe);
             pipeExists = true;
             break;
+        case 2:
+            inputStation(station);
+            stationExists = true;
+            break;
         case 3:
             if (pipeExists) printPipe(pipe);
             else cout << "Труба еще не создана.\n";
+            if (stationExists) printStation(station);
+            else cout << "КС еще не создана.\n";
             break;
         case 4:
             if (pipeExists) editPipeRepairFlag(pipe);
             else cout << "Труба еще не создана.\n";
+            break;
+        case 5:
+            if (stationExists) editStationShops(station);
+            else cout << "КС еще не создана.\n";
             break;
         case 0:
             return 0;
