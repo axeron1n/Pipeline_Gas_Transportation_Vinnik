@@ -218,10 +218,12 @@ int main() {
         
         switch (choice) {
         case 1:
+            if (pipeExists && !readYesNo("Труба уже создана. Пересоздать? (1-да/0-нет): ")) break;
             inputPipe(pipe);
             pipeExists = true;
             break;
         case 2:
+            if (stationExists && !readYesNo("КС уже создана. Пересоздать?: (1-да/0-нет) ")) break;
             inputStation(station);
             stationExists = true;
             break;
