@@ -75,6 +75,26 @@ bool readYesNo(const string& prompt) {
     }
 }
 
+void inputPipe(Pipe& pipe) {
+    pipe.markName = readLine("Киллометровая отметка (название) трубы: ");
+    pipe.lengthKm = readPositiveDouble("Длина трубы, км: ");
+    pipe.diameterMm = readPositiveDouble("Диаметр трубы, мм: ");
+    pipe.underRepair = readYesNo("Труба в ремонте? (1-да/0-нет): ");
+}
+
+void printPipe(const Pipe& pipe) {
+    cout << "--- Труба ---\n"
+        << "Отметка: " << pipe.markName << "\n"
+        << "Длина, км: " << pipe.lengthKm << "\n"
+        << "Диаметр, мм: " << pipe.diameterMm << "\n"
+        << "В ремонте: " << (pipe.underRepair ? "да" : "нет") << "\n";
+}
+
+void editPipeRepairFlag(Pipe& pipe) {
+    pipe.underRepair = readYesNo("Установить признак 'в ремонте'? (1-да/0-нет): ");
+    cout << "Признак обновлен.\n";
+}
+
 void printMenu() {
     cout << "\n1. Добавить трубу\n"
         << "2. Добавить КС\n"
@@ -94,13 +114,31 @@ int main() {
 
     Pipe pipe;
     CompressorStation station;
-    (void)pipe; // переменная пока не используется, добавил в промежуточном варианте, чтобы не было ошибок
     (void)station; // переменная пока не используется, добавил в промежуточном варианте, чтобы не было ошибок
+
+    bool pipeExists = false;
 
     while (true) {
         printMenu();
         int choice = readIntInRange("Выберите действие: ", 0, 7);;
-        if (choice == 0) break;
+        
+        switch (choice) {
+        case 1:
+            inputPipe(pipe);
+            pipeExists = true;
+            break;
+        case 3:
+            if (pipeExists) printPipe(pipe);
+            else cout << "Труба еще не создана.\n";
+            break;
+        case 4:
+            if (pipeExists) editPipeRepairFlag(pipe);
+            else cout << "Труба еще не создана.\n";
+            break;
+        case 0:
+            return 0;
+        default:
+            cout << "Этот пункт меню будет реализован позже.\n";
+        }
     }
-    return 0;
 }
