@@ -1,6 +1,9 @@
 ﻿#include <iostream>
 #include <string>
+#include <fstream>
+#include <limits>
 #ifdef _WIN32   // поддержка русского языка
+#define NOMINMAX
 #include <Windows.h>
 #endif
 
@@ -19,6 +22,8 @@ struct CompressorStation {
     int shopInWork = 0;
     int stationClass = 0;
 };
+
+const string DATA_FILE = "pipeline_data.txt";
 
 string readLine(const string& prompt) {
     cout << prompt;
@@ -134,6 +139,57 @@ void editStationShops(CompressorStation& station) {
     }
 }
 
+bool saveData(bool pipeExists, const Pipe& pipe, bool stationExists, const CompressorStation& station) {
+    ofstream out(DATA_FILE);
+    if (!out) return false;
+
+    if (pipeExists) {
+        out << "PIPE\n" << pipe.markName << "\n"
+            << pipe.lengthKm << " " << pipe.diameterMm << " " << pipe.underRepair << "\n";
+    }
+    else {
+        out << "NOPIPE\n";
+    }
+
+    if (stationExists) {
+        out << "STATION\n" << station.name << "\n"
+            << station.shopCount << " " << station.shopInWork << " " << station.stationClass << "\n";
+    }
+    else {
+        out << "NOSTATION\n";
+    }
+    return true;
+}
+
+bool loadData(bool& pipeExists, Pipe& pipe, bool& stationExists, CompressorStation& station) {
+    ifstream in(DATA_FILE);
+    if (!in) return false;
+
+    string tag;
+    getline(in, tag);
+    if (tag == "PIPE") {
+        getline(in, pipe.markName);
+        in >> pipe.lengthKm >> pipe.diameterMm >> pipe.underRepair;
+        in.ignore(numeric_limits<streamsize>::max(), '\n');
+        pipeExists = true;
+    }
+    else {
+        pipeExists = false;
+    }
+
+    getline(in, tag);
+    if (tag == "STATION") {
+        getline(in, station.name);
+        in >> station.shopCount >> station.shopInWork >> station.stationClass;
+        in.ignore(numeric_limits<streamsize>::max(), '\n');
+        stationExists = true;
+    }
+    else {
+        stationExists = false;
+    }
+    return true;
+}
+
 void printMenu() {
     cout << "\n1. Добавить трубу\n"
         << "2. Добавить КС\n"
@@ -183,10 +239,16 @@ int main() {
             if (stationExists) editStationShops(station);
             else cout << "КС еще не создана.\n";
             break;
+        case 6:
+            cout << (saveData(pipeExists, pipe, stationExists, station)
+                ? "Данные сохранены.\n" : "Ошибка сохранения.\n");
+            break;
+        case 7:
+            cout << (loadData(pipeExists, pipe, stationExists, station)
+                ? "Данные загружены.\n" : "Файл не найден.\n");
+            break;
         case 0:
             return 0;
-        default:
-            cout << "Этот пункт меню будет реализован позже.\n";
         }
     }
 }
