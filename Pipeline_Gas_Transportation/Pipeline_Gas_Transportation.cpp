@@ -23,8 +23,7 @@ struct CompressorStation {
     int stationClass = 0;
 };
 
-const string pipeDataFile = "pipe_data.txt";
-const string stationDataFile = "station_data.txt";
+const string dataFile = "data_file.txt";
 
 string readLine(const string& prompt) {
     cout << prompt;
@@ -140,10 +139,7 @@ void editStationShops(CompressorStation& station) {
     }
 }
 
-bool savePipeData(bool pipeExists, const Pipe& pipe) {
-    ofstream out(pipeDataFile);
-    if (!out) return false;
-
+bool savePipeData(ofstream& out, bool pipeExists, const Pipe& pipe) {
     if (pipeExists) {
         out << "PIPE\n" << pipe.markName << "\n"
             << pipe.lengthKm << " " << pipe.diameterMm << " " << pipe.underRepair << "\n";
@@ -151,13 +147,11 @@ bool savePipeData(bool pipeExists, const Pipe& pipe) {
     else {
         out << "NOPIPE\n";
     }
-    return true;
+    if (out) return true;
+    return false;
 }
 
-bool loadPipeData(bool& pipeExists, Pipe& pipe) {
-    ifstream in(pipeDataFile);
-    if (!in) return false;
-
+bool loadPipeData(ifstream& in, bool& pipeExists, Pipe& pipe) {
     string tag;
     getline(in, tag);
     if (tag == "PIPE") {
@@ -172,10 +166,7 @@ bool loadPipeData(bool& pipeExists, Pipe& pipe) {
     return true;
 }
 
-bool saveStationData(bool stationExists, const CompressorStation& station) {
-    ofstream out(stationDataFile);
-    if (!out) return false;
-
+bool saveStationData(ofstream& out, bool stationExists, const CompressorStation& station) {
     if (stationExists) {
         out << "STATION\n" << station.name << "\n"
             << station.shopCount << " " << station.shopInWork << " " << station.stationClass << "\n";
@@ -183,13 +174,11 @@ bool saveStationData(bool stationExists, const CompressorStation& station) {
     else {
         out << "NOSTATION\n";
     }
-    return true;
+    if (out) return true;
+    return false;
 }
 
-bool loadStationData(bool& stationExists, CompressorStation& station) {
-    ifstream in(stationDataFile);
-    if (!in) return false;
-
+bool loadStationData(ifstream& in, bool& stationExists, CompressorStation& station) {
     string tag;
     getline(in, tag);
     if (tag == "STATION") {
@@ -255,18 +244,26 @@ int main() {
             if (stationExists) editStationShops(station);
             else cout << "КС еще не создана.\n";
             break;
-        case 6:
-            if (savePipeData(pipeExists, pipe)) cout << "Труба сохранена.\n";
-            else cout << "Ошибка сохранения трубы.\n";
-            if (saveStationData(stationExists, station)) cout << "КС сохранена.\n";
-            else cout << "Ошибка сохранения КС.\n";
+        case 6: {
+            ofstream out(dataFile);
+            if (out) {
+                (savePipeData(out, pipeExists, pipe));
+                (saveStationData(out, stationExists, station));
+                cout << "Данные сохранены.\n";
+            }
+            else cout << "Ошибка сохранения данных.\n";
             break;
-        case 7:
-            if (loadPipeData(pipeExists, pipe)) cout << "Труба загружена.\n";
-            else cout << "Файл трубы не найден.\n";
-            if (loadStationData(stationExists, station)) cout << "КС загружена.\n";
-            else cout << "Файл КС не найден.\n";
+        }
+        case 7: {
+            ifstream in(dataFile);
+            if (in) {
+                (loadPipeData(in, pipeExists, pipe));
+                (loadStationData(in, stationExists, station));
+                cout << "Данные загружены.\n";
+            }
+            else cout << "Файл не найден.\n";
             break;
+        }
         case 0:
             return 0;
         }
