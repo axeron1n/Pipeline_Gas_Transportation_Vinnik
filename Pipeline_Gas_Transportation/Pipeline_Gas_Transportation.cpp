@@ -147,8 +147,7 @@ bool savePipeData(ofstream& out, bool pipeExists, const Pipe& pipe) {
     else {
         out << "NOPIPE\n";
     }
-    if (out) return true;
-    return false;
+    return out.good();
 }
 
 bool loadPipeData(ifstream& in, bool& pipeExists, Pipe& pipe) {
@@ -163,7 +162,7 @@ bool loadPipeData(ifstream& in, bool& pipeExists, Pipe& pipe) {
     else {
         pipeExists = false;
     }
-    return true;
+    return in.good();
 }
 
 bool saveStationData(ofstream& out, bool stationExists, const CompressorStation& station) {
@@ -174,8 +173,7 @@ bool saveStationData(ofstream& out, bool stationExists, const CompressorStation&
     else {
         out << "NOSTATION\n";
     }
-    if (out) return true;
-    return false;
+    return out.good();
 }
 
 bool loadStationData(ifstream& in, bool& stationExists, CompressorStation& station) {
@@ -190,7 +188,7 @@ bool loadStationData(ifstream& in, bool& stationExists, CompressorStation& stati
     else {
         stationExists = false;
     }
-    return true;
+    return in.good();
 }
 
 void printMenu() {
