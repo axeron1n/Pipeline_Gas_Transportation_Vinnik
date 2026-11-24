@@ -1,5 +1,6 @@
 #include "CompressorStation.h"
 #include "utils.h"
+#include <cmath>
 #include <limits>
 
 using namespace std;
@@ -21,6 +22,18 @@ bool CompressorStation::readFromConsole()
 int CompressorStation::getId() const
 {
     return id;
+}
+
+const string& CompressorStation::getName() const
+{
+    return name;
+}
+
+double CompressorStation::getUnusedPercent() const
+{
+    if (shopCount == 0)
+        return 0;
+    return round(1000.0 * (shopCount - shopsInWork) / shopCount) / 10.0;
 }
 
 int CompressorStation::getFreeShops() const
@@ -65,6 +78,7 @@ bool CompressorStation::load(ifstream& in)
 ostream& operator<<(ostream& out, const CompressorStation& station)
 {
     out << "КС id=" << station.id << " «" << station.name << "»: цехов " << station.shopCount
-        << ", в работе " << station.shopsInWork << ", класс " << station.stationClass;
+        << ", в работе " << station.shopsInWork << " (не задействовано " << station.getUnusedPercent()
+        << "%), класс " << station.stationClass;
     return out;
 }

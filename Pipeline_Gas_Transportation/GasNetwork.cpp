@@ -50,12 +50,31 @@ const unordered_map<int, CompressorStation>& GasNetwork::getStations() const
 
 set<int> GasNetwork::findPipesByName(const string& part) const
 {
-    return findIds(pipes, [&part](const Pipe& pipe) { return pipe.getName().find(part) != string::npos; });
+    return findIds(pipes, [&part](const Pipe& pipe) {
+        return pipe.getName().find(part) != string::npos;
+    });
 }
 
 set<int> GasNetwork::findPipesByRepair(bool underRepair) const
 {
-    return findIds(pipes, [underRepair](const Pipe& pipe) { return pipe.isUnderRepair() == underRepair; });
+    return findIds(pipes, [underRepair](const Pipe& pipe) {
+        return pipe.isUnderRepair() == underRepair;
+    });
+}
+
+set<int> GasNetwork::findStationsByName(const string& part) const
+{
+    return findIds(stations, [&part](const CompressorStation& station) {
+        return station.getName().find(part) != string::npos;
+    });
+}
+
+set<int> GasNetwork::findStationsByUnusedPercent(double minPercent, double maxPercent) const
+{
+    return findIds(stations, [minPercent, maxPercent](const CompressorStation& station) {
+        double percent = station.getUnusedPercent();
+        return percent >= minPercent && percent <= maxPercent;
+    });
 }
 
 bool GasNetwork::save(const string& filename) const

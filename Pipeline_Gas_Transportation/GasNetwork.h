@@ -22,6 +22,8 @@ public:
 
     std::set<int> findPipesByName(const std::string& part) const;
     std::set<int> findPipesByRepair(bool underRepair) const;
+    std::set<int> findStationsByName(const std::string& part) const;
+    std::set<int> findStationsByUnusedPercent(double minPercent, double maxPercent) const;
 
     bool save(const std::string& fileName) const;
     bool load(const std::string& fileName);

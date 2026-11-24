@@ -139,6 +139,27 @@ void searchPipes(const GasNetwork& network)
     printObjects(network.getPipes(), ids);
 }
 
+void searchStations(const GasNetwork& network)
+{
+    cout << "Поиск КС:\n1. По названию\n2. По проценту незадействованных цехов\n0. Назад\n";
+    int choice = readNumber("Выберите фильтр: ", 0, 2);
+    if (choice == 0)
+        return;
+
+    set<int> ids;
+    if (choice == 1) {
+        ids = network.findStationsByName(readNonEmptyLine("Часть названия: "));
+    }
+    else {
+        double minPercent = readNumber("Процент незадействованных цехов от (0..100): ", 0.0, 100.0);
+        double maxPercent = readNumber("до (не меньше нижней границы, не больше 100): ", minPercent, 100.0);
+        ids = network.findStationsByUnusedPercent(minPercent, maxPercent);
+    }
+
+    cout << "Найдено КС: " << ids.size() << "\n";
+    printObjects(network.getStations(), ids);
+}
+
 void saveData(const GasNetwork& network)
 {
     string fileName = readNonEmptyLine("Имя файла для сохранения: ");
@@ -167,8 +188,9 @@ void printMenu()
         << "6. Удалить трубу\n"
         << "7. Удалить КС\n"
         << "8. Поиск труб\n"
-        << "9. Сохранить\n"
-        << "10. Загрузить\n"
+        << "9. Поиск КС\n"
+        << "10. Сохранить\n"
+        << "11. Загрузить\n"
         << "0. Выход\n";
 }
 
@@ -183,7 +205,7 @@ int main()
 
     while (true) {
         printMenu();
-        switch (readNumber("Выберите действие: ", 0, 10)) {
+        switch (readNumber("Выберите действие: ", 0, 11)) {
         case 1:
             addPipe(network);
             break;
@@ -209,9 +231,12 @@ int main()
             searchPipes(network);
             break;
         case 9:
-            saveData(network);
+            searchStations(network);
             break;
         case 10:
+            saveData(network);
+            break;
+        case 11:
             loadData(network);
             break;
         case 0:

@@ -8,6 +8,8 @@ public:
     bool readFromConsole();
 
     int getId() const;
+    const std::string& getName() const;
+    double getUnusedPercent() const;
 
     int getFreeShops() const;
     int getWorkingShops() const;
