@@ -1,7 +1,9 @@
 #pragma once
 #include <iostream>
+#include <set>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 
 std::string readLine(const std::string& prompt);
 std::string readNonEmptyLine(const std::string& prompt);
@@ -20,4 +22,14 @@ T readNumber(const std::string& prompt, T minValue, T maxValue)
             return value;
         std::cout << "Некорректный ввод, повторите.\n";
     }
+}
+
+template <typename T>
+void printObjects(const std::unordered_map<int, T>& objects)
+{
+    std::set<int> ids;
+    for (const auto& [id, object] : objects)
+        ids.insert(id);
+    for (int id : ids)
+        std::cout << " " << objects.at(id) << "\n";
 }

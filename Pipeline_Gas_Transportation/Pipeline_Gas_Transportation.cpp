@@ -1,9 +1,10 @@
-﻿#include "CompressorStation.h"
-#include "Pipe.h"
+﻿#include "GasNetwork.h"
 #include "utils.h"
 #include <iostream>
+#include <limits>
 #include <string>
-#include <fstream>
+#include <unordered_map>
+#include <utility>
 #ifdef _WIN32   // поддержка русского языка
 #define NOMINMAX
 #include <Windows.h>
@@ -13,10 +14,62 @@ using namespace std;
 
 const string dataFile = "data_file.txt";
 
-void editPipeRepairFlag(Pipe& pipe)
+// Просит id существующего объекта, пока не введут верный; 0 - отмена
+template <typename T>
+int readExistingId(const unordered_map<int, T>& objects, const string prompt)
 {
-    pipe.setUnderRepair(readYesNo("Установить признак 'в ремонте'? (1-да/0-нет): "));
-    cout << "Признак обновлен.\n";
+    if (objects.empty()) {
+        cout << "Список пуст.\n";
+        return 0;
+    }
+    while (true) {
+        int id = readNumber(prompt + " (0 - отмена): ", 0, numeric_limits<int>::max());
+        if (id == 0 || objects.count(id) > 0)
+            return id;
+        cout << "Объект с id " << id << " не найден.\n";
+    }
+}
+
+void addPipe(GasNetwork& network)
+{
+    Pipe pipe;
+    if (!pipe.readFromConsole()) {
+        cout << " Не удалось добавить трубу: достигнут предел ID.\n";
+        return;
+    }
+    const Pipe& added = network.addPipe(move(pipe));
+    cout << "Добавлено: " << added << "\n";
+}
+
+void addStation(GasNetwork& network)
+{
+    CompressorStation station;
+    if (!station.readFromConsole()) {
+        cout << "Не удалось добавить КС: достигнут предел ID.\n";
+        return;
+    }
+    const CompressorStation& added = network.addStation(move(station));
+    cout << "Добавлено: " << added << "\n";
+}
+
+void showAll(const GasNetwork& network)
+{
+    const auto& pipes = network.getPipes();
+    const auto& stations = network.getStations();
+    cout << "Трубы (" << stations.size() << "):\n";
+    printObjects(pipes);
+    cout << "КС (" << stations.size() << "):\n";
+    printObjects(stations);
+}
+
+void editPipe(GasNetwork& network)
+{
+    int id = readExistingId(network.getPipes(), "id трубы");
+    if (id == 0)
+        return;
+    Pipe& pipe = network.getPipe(id);
+    pipe.setUnderRepair(readYesNo("Труба в ремонте? (1-да/0-нет): "));
+    cout << "Изменено: " << pipe << "\n";
 }
 
 int readShopChangeCount(int available, bool start)
@@ -35,7 +88,7 @@ void changeStationShops(CompressorStation& station, bool start, int count)
     if (changed)
         cout << (start ? "Запущено цехов: " : "Остановлено цехов: ") << count << ". " << station << "\n";
     else
-        cout << station << ". " << (start ? "Недостаточно свободныъ цехов." : "Недостаточно работающих цехов.") << "\n";
+        cout << station << ". " << (start ? "Недостаточно свободных цехов." : "Недостаточно работающих цехов.") << "\n";
 }
 
 void editStationShops(CompressorStation& station)
@@ -51,48 +104,25 @@ void editStationShops(CompressorStation& station)
         changeStationShops(station, start, count);
 }
 
-bool savePipeData(ofstream& out, bool pipeExists, const Pipe& pipe)
+void editStation(GasNetwork& network)
 {
-    if (pipeExists) {
-        out << "PIPE\n";
-        pipe.save(out);
-    }
-    else {
-        out << "NOPIPE\n";
-    }
-    return out.good();
+    int id = readExistingId(network.getStations(), "id КС");
+    if (id != 0)
+        editStationShops(network.getStation(id));
 }
 
-bool loadPipeData(ifstream& in, bool& pipeExists, Pipe& pipe)
+void deletePipe(GasNetwork& network)
 {
-    string tag;
-    in >> tag;
-    pipeExists = (tag == "PIPE");
-    if (pipeExists)
-        pipe.load(in);
-    return in.good();
+    int id = readExistingId(network.getPipes(), "id трубы для удаления");
+    if (id != 0 && network.removePipe(id))
+        cout << "Труба id=" << id << " удалена.\n";
 }
 
-bool saveStationData(ofstream& out, bool stationExists, const CompressorStation& station)
+void deleteStation(GasNetwork& network)
 {
-    if (stationExists) {
-        out << "STATION\n";
-        station.save(out);
-    }
-    else {
-        out << "NOSTATION\n";
-    }
-    return out.good();
-}
-
-bool loadStationData(ifstream& in, bool& stationExists, CompressorStation& station)
-{
-    string tag;
-    in >> tag;
-    stationExists = (tag == "STATION");
-    if (stationExists)
-        station.load(in);
-    return in.good();
+    int id = readExistingId(network.getStations(), "id КС для удаления");
+    if (id != 0 && network.removeStation(id))
+        cout << "КС id=" << id << " удалена.\n";
 }
 
 void printMenu()
@@ -102,8 +132,10 @@ void printMenu()
         << "3. Просмотр всех объектов\n"
         << "4. Редактировать трубу\n"
         << "5. Редактировать КС\n"
-        << "6. Сохранить\n"
-        << "7. Загрузить\n"
+        << "6. Удалить трубу\n"
+        << "7. Удалить КС\n"
+        << "8. Сохранить\n"
+        << "9. Загрузить\n"
         << "0. Выход\n";
 }
 
@@ -114,62 +146,44 @@ int main()
     SetConsoleCP(CP_UTF8);
 #endif
 
-    Pipe pipe;
-    CompressorStation station;
-    bool pipeExists = false;
-    bool stationExists = false;
+    GasNetwork network;
 
     while (true) {
         printMenu();
-        int choice = readNumber("Выберите действие: ", 0, 7);;
-        
-        switch (choice) {
+        switch (readNumber("Выберите действие: ", 0, 9)) {
         case 1:
-            if (pipeExists && !readYesNo("Труба уже создана. Пересоздать? (1-да/0-нет): ")) break;
-            if (!pipe.readFromConsole()) {
-                cout << "Не удалось добавить трубу: достигнут предел ID.\n";
-                break;
-            }
-            pipeExists = true;
+            addPipe(network);
             break;
         case 2:
-            if (stationExists && !readYesNo("КС уже создана. Пересоздать?: (1-да/0-нет) ")) break;
-            if (!station.readFromConsole()) {
-                cout << "Не удалось добавить КС: достигнут предел по ID.\n";
-                break;
-            }
-            stationExists = true;
+            addStation(network);
             break;
         case 3:
-            if (pipeExists) cout << pipe << "\n";
-            else cout << "Труба еще не создана.\n";
-            if (stationExists) cout << station << "\n";
-            else cout << "КС еще не создана.\n";
+            showAll(network);
             break;
         case 4:
-            if (pipeExists) editPipeRepairFlag(pipe);
-            else cout << "Труба еще не создана.\n";
+            editPipe(network);
             break;
         case 5:
-            if (stationExists) editStationShops(station);
-            else cout << "КС еще не создана.\n";
+            editStation(network);
             break;
-        case 6: {
-            ofstream out(dataFile);
-            if (out && savePipeData(out, pipeExists, pipe) && saveStationData(out, stationExists, station))
+        case 6:
+            deletePipe(network);
+            break;
+        case 7:
+            deleteStation(network);
+            break;
+        case 8:
+            if (network.save(dataFile))
                 cout << "Данные сохранены.\n";
             else
                 cout << "Ошибка сохранения данных.\n";
             break;
-        }
-        case 7: {
-            ifstream in(dataFile);
-            if (in && loadPipeData(in, pipeExists, pipe) && loadStationData(in, stationExists, station))
+        case 9:
+            if (network.load(dataFile))
                 cout << "Данные загружены.\n";
             else
                 cout << "Ошибка загрузки данных.\n";
             break;
-        }
         case 0:
             return 0;
         }

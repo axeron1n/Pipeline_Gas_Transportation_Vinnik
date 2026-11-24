@@ -144,12 +144,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CompressorStation.cpp" />
+    <ClCompile Include="GasNetwork.cpp" />
     <ClCompile Include="Pipe.cpp" />
     <ClCompile Include="Pipeline_Gas_Transportation.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CompressorStation.h" />
+    <ClInclude Include="GasNetwork.h" />
     <ClInclude Include="Pipe.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
