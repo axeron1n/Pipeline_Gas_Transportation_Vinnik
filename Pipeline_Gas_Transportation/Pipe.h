@@ -8,6 +8,7 @@ public:
     bool readFromConsole();
 
     int getId() const;
+    const std::string& getName() const;
 
     bool isUnderRepair() const;
     void setUnderRepair(bool value);

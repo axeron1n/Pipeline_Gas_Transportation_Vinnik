@@ -42,12 +42,27 @@ T readNumber(const std::string& prompt, T minValue, T maxValue)
     }
 }
 
-template <typename T>
-void printObjects(const std::unordered_map<int, T>& objects)
+// Возвращает id объектов, для которых matches(объект) == true
+template <typename T, typename Predicate>
+std::set<int> findIds(const std::unordered_map<int, T>& objects, Predicate matches)
 {
     std::set<int> ids;
     for (const auto& [id, object] : objects)
-        ids.insert(id);
+        if (matches(object))
+            ids.insert(id);
+    return ids;
+}
+
+// Печатает только объекты с id из ids
+template <typename T>
+void printObjects(const std::unordered_map<int, T>& objects, const std::set<int>& ids)
+{
     for (int id : ids)
         std::cout << " " << objects.at(id) << "\n";
+}
+
+template <typename T>
+void printObjects(const std::unordered_map<int, T>& objects)
+{
+    printObjects(objects, findIds(objects, [](const T&) { return true; }));
 }

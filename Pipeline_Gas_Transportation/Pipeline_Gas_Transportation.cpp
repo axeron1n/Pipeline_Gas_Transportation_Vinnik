@@ -4,6 +4,7 @@
 #include <limits>
 #include <string>
 #include <unordered_map>
+#include <set>
 #include <utility>
 #ifdef _WIN32   // поддержка русского языка
 #define NOMINMAX
@@ -123,6 +124,21 @@ void deleteStation(GasNetwork& network)
         cout << "КС id=" << id << " удалена.\n";
 }
 
+void searchPipes(const GasNetwork& network)
+{
+    cout << "Поиск труб:\n1. По названию\n2. По признаку «в ремонте»\n0. Назад\n";
+    int choice = readNumber("Выберите фильтр: ", 0, 2);
+    if (choice == 0)
+        return;
+    set<int> ids;
+    if (choice == 1)
+        ids = network.findPipesByName(readNonEmptyLine("Часть названия: "));
+    else
+        ids = network.findPipesByRepair(readYesNo("Искать трубы в ремонте? (1-да/0-нет): "));
+    cout << "Найдено труб: " << ids.size() << "\n";
+    printObjects(network.getPipes(), ids);
+}
+
 void saveData(const GasNetwork& network)
 {
     string fileName = readNonEmptyLine("Имя файла для сохранения: ");
@@ -150,8 +166,9 @@ void printMenu()
         << "5. Редактировать КС\n"
         << "6. Удалить трубу\n"
         << "7. Удалить КС\n"
-        << "8. Сохранить\n"
-        << "9. Загрузить\n"
+        << "8. Поиск труб\n"
+        << "9. Сохранить\n"
+        << "10. Загрузить\n"
         << "0. Выход\n";
 }
 
@@ -166,7 +183,7 @@ int main()
 
     while (true) {
         printMenu();
-        switch (readNumber("Выберите действие: ", 0, 9)) {
+        switch (readNumber("Выберите действие: ", 0, 10)) {
         case 1:
             addPipe(network);
             break;
@@ -189,9 +206,12 @@ int main()
             deleteStation(network);
             break;
         case 8:
-            saveData(network);
+            searchPipes(network);
             break;
         case 9:
+            saveData(network);
+            break;
+        case 10:
             loadData(network);
             break;
         case 0:

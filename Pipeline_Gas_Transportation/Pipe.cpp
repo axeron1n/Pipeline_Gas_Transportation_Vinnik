@@ -24,6 +24,11 @@ int Pipe::getId() const
     return id;
 }
 
+const string& Pipe::getName() const
+{
+    return markName;
+}
+
 bool Pipe::isUnderRepair() const
 {
     return underRepair;

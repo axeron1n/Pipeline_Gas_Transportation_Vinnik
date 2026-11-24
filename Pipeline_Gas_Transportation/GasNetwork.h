@@ -2,6 +2,7 @@
 #include "CompressorStation.h"
 #include "Pipe.h"
 #include <fstream>
+#include <set>
 #include <string>
 #include <unordered_map>
 
@@ -18,6 +19,9 @@ public:
 
     const std::unordered_map<int, Pipe>& getPipes() const;
     const std::unordered_map<int, CompressorStation>& getStations() const;
+
+    std::set<int> findPipesByName(const std::string& part) const;
+    std::set<int> findPipesByRepair(bool underRepair) const;
 
     bool save(const std::string& fileName) const;
     bool load(const std::string& fileName);

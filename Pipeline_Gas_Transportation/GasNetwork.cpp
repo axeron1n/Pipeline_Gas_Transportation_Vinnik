@@ -48,6 +48,16 @@ const unordered_map<int, CompressorStation>& GasNetwork::getStations() const
     return stations;
 }
 
+set<int> GasNetwork::findPipesByName(const string& part) const
+{
+    return findIds(pipes, [&part](const Pipe& pipe) { return pipe.getName().find(part) != string::npos; });
+}
+
+set<int> GasNetwork::findPipesByRepair(bool underRepair) const
+{
+    return findIds(pipes, [underRepair](const Pipe& pipe) { return pipe.isUnderRepair() == underRepair; });
+}
+
 bool GasNetwork::save(const string& filename) const
 {
     ofstream out(filename);
