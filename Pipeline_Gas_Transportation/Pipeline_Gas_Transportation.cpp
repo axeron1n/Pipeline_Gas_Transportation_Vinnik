@@ -126,12 +126,18 @@ int main()
         switch (choice) {
         case 1:
             if (pipeExists && !readYesNo("Труба уже создана. Пересоздать? (1-да/0-нет): ")) break;
-            pipe.readFromConsole();
+            if (!pipe.readFromConsole()) {
+                cout << "Не удалось добавить трубу: достигнут предел ID.\n";
+                break;
+            }
             pipeExists = true;
             break;
         case 2:
             if (stationExists && !readYesNo("КС уже создана. Пересоздать?: (1-да/0-нет) ")) break;
-            station.readFromConsole();
+            if (!station.readFromConsole()) {
+                cout << "Не удалось добавить КС: достигнут предел по ID.\n";
+                break;
+            }
             stationExists = true;
             break;
         case 3:

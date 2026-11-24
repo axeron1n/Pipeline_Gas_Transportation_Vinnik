@@ -5,7 +5,9 @@
 
 class Pipe {
 public:
-    void readFromConsole();
+    bool readFromConsole();
+
+    int getId() const;
 
     bool isUnderRepair() const;
     void setUnderRepair(bool value);
@@ -16,6 +18,9 @@ public:
     friend std::ostream& operator<<(std::ostream& out, const Pipe& pipe);
 
 private:
+    static int maxId;
+
+    int id = 0;
     std::string markName;
     double lengthKm = 0;
     double diameterMm = 0;
