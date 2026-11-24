@@ -1,6 +1,6 @@
 #include "Pipe.h"
 #include "utils.h"
-#include <algorithm>
+#include <cmath>
 #include <limits>
 
 using namespace std;
@@ -40,13 +40,12 @@ void Pipe::save(ofstream& out) const
         << lengthKm << " " << diameterMm << " " << underRepair << "\n";
 }
 
-void Pipe::load(ifstream& in)
+bool Pipe::load(ifstream& in)
 {
-    in >> id;
-    in.ignore(numeric_limits<streamsize>::max(), '\n');
-    getline(in, markName);
-    in >> lengthKm >> diameterMm >> underRepair;
-    maxId = max(maxId, id); // новые трубы не получат id, уже занятый загруженной
+    return readObjectHeader(in, id, markName)
+        && readValuesLine(in, lengthKm, diameterMm, underRepair)
+        && isfinite(lengthKm) && lengthKm > 0
+        && isfinite(diameterMm) && diameterMm > 0;
 }
 
 ostream& operator<<(ostream& out, const Pipe& pipe)

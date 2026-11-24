@@ -15,11 +15,12 @@ public:
     bool stopShops(int count);
 
     void save(std::ofstream& out) const;
-    void load(std::ifstream& in);
+    bool load(std::ifstream& in);
 
     friend std::ostream& operator<<(std::ostream& out, const CompressorStation& station);
     
 private:
+    friend class GasNetwork;
     static int maxId; // наибольший выданный id: новый объект получает maxId + 1
 
     int id = 0;

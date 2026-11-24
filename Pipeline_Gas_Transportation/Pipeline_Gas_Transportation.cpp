@@ -12,8 +12,6 @@
 
 using namespace std;
 
-const string dataFile = "data_file.txt";
-
 // Просит id существующего объекта, пока не введут верный; 0 - отмена
 template <typename T>
 int readExistingId(const unordered_map<int, T>& objects, const string prompt)
@@ -56,7 +54,7 @@ void showAll(const GasNetwork& network)
 {
     const auto& pipes = network.getPipes();
     const auto& stations = network.getStations();
-    cout << "Трубы (" << stations.size() << "):\n";
+    cout << "Трубы (" << pipes.size() << "):\n";
     printObjects(pipes);
     cout << "КС (" << stations.size() << "):\n";
     printObjects(stations);
@@ -125,6 +123,24 @@ void deleteStation(GasNetwork& network)
         cout << "КС id=" << id << " удалена.\n";
 }
 
+void saveData(const GasNetwork& network)
+{
+    string fileName = readNonEmptyLine("Имя файла для сохранения: ");
+    if (network.save(fileName))
+        cout << "Данные сохранены в файл «" << fileName << "».\n";
+    else
+        cout << "Не удалось сохранить данные в файл «" << fileName << "».\n";
+}
+
+void loadData(GasNetwork& network)
+{
+    string fileName = readNonEmptyLine("Имя файла для загрузки: ");
+    if (network.load(fileName))
+        cout << "Данные загружены из файла «" << fileName << "».\n";
+    else
+        cout << "Не удалось загрузить данные из файла «" << fileName << "».\n";
+}
+
 void printMenu()
 {
     cout << "\n1. Добавить трубу\n"
@@ -173,16 +189,10 @@ int main()
             deleteStation(network);
             break;
         case 8:
-            if (network.save(dataFile))
-                cout << "Данные сохранены.\n";
-            else
-                cout << "Ошибка сохранения данных.\n";
+            saveData(network);
             break;
         case 9:
-            if (network.load(dataFile))
-                cout << "Данные загружены.\n";
-            else
-                cout << "Ошибка загрузки данных.\n";
+            loadData(network);
             break;
         case 0:
             return 0;

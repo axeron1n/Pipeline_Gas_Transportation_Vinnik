@@ -13,11 +13,12 @@ public:
     void setUnderRepair(bool value);
 
     void save(std::ofstream& out) const;
-    void load(std::ifstream& in);
+    bool load(std::ifstream& in);
 
     friend std::ostream& operator<<(std::ostream& out, const Pipe& pipe);
 
 private:
+    friend class GasNetwork;
     static int maxId;
 
     int id = 0;

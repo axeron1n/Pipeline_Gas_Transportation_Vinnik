@@ -27,6 +27,4 @@ private:
 
     void savePipes(std::ofstream& out) const;
     void saveStations(std::ofstream& out) const;
-    static bool loadPipes(std::ifstream& in, std::unordered_map<int, Pipe>& result);
-    static bool loadStations(std::ifstream& in, std::unordered_map<int, CompressorStation>& result);
 };

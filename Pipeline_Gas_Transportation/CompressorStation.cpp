@@ -1,6 +1,5 @@
 #include "CompressorStation.h"
 #include "utils.h"
-#include <algorithm>
 #include <limits>
 
 using namespace std;
@@ -56,13 +55,11 @@ void CompressorStation::save(ofstream& out) const
         << shopCount << " " << shopsInWork << " " << stationClass << "\n";
 }
 
-void CompressorStation::load(ifstream& in)
+bool CompressorStation::load(ifstream& in)
 {
-    in >> id;
-    in.ignore(numeric_limits<streamsize>::max(), '\n');
-    getline(in, name);
-    in >> shopCount >> shopsInWork >> stationClass;
-    maxId = max(maxId, id);
+    return readObjectHeader(in, id, name)
+        && readValuesLine(in, shopCount, shopsInWork, stationClass)
+        && shopCount >= 1 && shopsInWork >= 0 && shopsInWork <= shopCount && stationClass >= 0;
 }
 
 ostream& operator<<(ostream& out, const CompressorStation& station)

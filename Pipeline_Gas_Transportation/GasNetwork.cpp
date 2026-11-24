@@ -1,4 +1,6 @@
 #include "GasNetwork.h"
+#include "utils.h"
+#include <algorithm>
 #include <limits>
 #include <utility>
 
@@ -57,18 +59,42 @@ bool GasNetwork::save(const string& filename) const
     return out.good();
 }
 
+template <typename T>
+static bool loadObjects(ifstream& in, unordered_map<int, T>& result, int& maxId)
+{
+    int count = 0;
+    if (!readValuesLine(in, count) || count < 0)
+        return false;
+    for (int i = 0; i < count; ++i) {
+        T object;
+        if (!object.load(in))
+            return false;
+        const int id = object.getId();
+        if (!result.emplace(id, move(object)).second)
+            return false;
+        maxId = max(maxId, id);
+    }
+    return true;
+}
+
 bool GasNetwork::load(const string& filename)
 {
     ifstream in(filename);
     if (!in)
         return false;
-    // Читаем во временные контейнеры, чтобы при ошибке в файле не потерять текущие данные
     unordered_map<int, Pipe> loadedPipes;
     unordered_map<int, CompressorStation> loadedStations;
-    if (!loadPipes(in, loadedPipes) || !loadStations(in, loadedStations))
+    int maxPipeId = Pipe::maxId;
+    int maxStationId = CompressorStation::maxId;
+    if (!loadObjects(in, loadedPipes, maxPipeId) || !loadObjects(in, loadedStations, maxStationId))
+        return false;
+    in >> ws;
+    if (in.bad() || !in.eof())
         return false;
     pipes.swap(loadedPipes);
     stations.swap(loadedStations);
+    Pipe::maxId = maxPipeId;
+    CompressorStation::maxId = maxStationId;
     return true;
 }
 
@@ -84,30 +110,4 @@ void GasNetwork::saveStations(ofstream& out) const
     out << stations.size() << "\n";
     for (const auto& [id, station] : stations)
         station.save(out);
-}
-
-bool GasNetwork::loadPipes(ifstream& in, unordered_map<int, Pipe>& result)
-{
-    size_t count = 0;
-    in >> count;
-    for (size_t i = 0; i < count && in; ++i) {
-        Pipe pipe;
-        pipe.load(in);
-        int id = pipe.getId();
-        result.emplace(id, move(pipe));
-    }
-    return !in.fail();
-}
-
-bool GasNetwork::loadStations(ifstream& in, unordered_map<int, CompressorStation>& result)
-{
-    size_t count = 0;
-    in >> count;
-    for (size_t i = 0; i < count && in; ++i) {
-        CompressorStation station;
-        station.load(in);
-        int id = station.getId();
-        result.emplace(id, move(station));
-    }
-    return !in.fail();
 }
