@@ -1,7 +1,9 @@
-﻿#include <iostream>
+﻿#include "CompressorStation.h"
+#include "Pipe.h"
+#include "utils.h"
+#include <iostream>
 #include <string>
 #include <fstream>
-#include <limits>
 #ifdef _WIN32   // поддержка русского языка
 #define NOMINMAX
 #include <Windows.h>
@@ -9,140 +11,51 @@
 
 using namespace std;
 
-struct Pipe {
-    string markName;
-    double lengthKm = 0;
-    double diameterMm = 0;
-    bool underRepair = false;
-};
-
-struct CompressorStation {
-    string name;
-    int shopCount = 0;
-    int shopInWork = 0;
-    int stationClass = 0;
-};
-
 const string dataFile = "data_file.txt";
 
-string readLine(const string& prompt) {
-    cout << prompt;
-    string line;
-    getline(cin, line); // читаем всю строку до Enter, пробелы не мешают
-    return line;
-}
-
-double readPositiveDouble(const string& prompt) {
-    while (true) {
-        string line = readLine(prompt);
-        try {
-            size_t pos; // сюда stod запишет докуда дошел разбор строки
-            double value = stod(line, &pos); // пытается прочитать число с плавающей точкой из строки
-            if (pos == line.size() && value > 0) return value;  // разобрано целиком и число положительное - подходит
-        }
-        catch (...) {}  // ввод не число - игнорируем и переспрашиваем
-        cout << "Введите положительное число.\n";
-    }
-}
-
-int readNonNegative(const string& prompt) {
-    while (true) {
-        string line = readLine(prompt);
-        try {
-            size_t pos;
-            int value = stoi(line, &pos); // тоже самое что stod, но для int
-            if (pos == line.size() && value >= 0) return value;
-        }
-        catch (...) {}
-        cout << "Введите неотрицательное число.\n";
-    }
-}
-
-int readIntInRange(const string& prompt, int minVal, int maxVal) {
-    while (true) {
-        string line = readLine(prompt);
-        try {
-            size_t pos;
-            int value = stoi(line, &pos);
-            if (pos == line.size() && value >= minVal && value <= maxVal) return value;
-        }
-        catch (...) {}
-        cout << "Введите число от " << minVal << " до " << maxVal << ".\n";
-    }
-}
-
-bool readYesNo(const string& prompt) {
-    while (true) {
-        string line = readLine(prompt);
-        if (line == "1" || line == "y" || line == "Y") return true;
-        if (line == "0" || line == "n" || line == "N") return false;
-        cout << "Введите 1 (да) или 0 (нет).\n";
-    }
-}
-
-void inputPipe(Pipe& pipe) {
-    pipe.markName = readLine("Киллометровая отметка (название) трубы: ");
-    pipe.lengthKm = readPositiveDouble("Длина трубы, км: ");
-    pipe.diameterMm = readPositiveDouble("Диаметр трубы, мм: ");
-    pipe.underRepair = readYesNo("Труба в ремонте? (1-да/0-нет): ");
-}
-
-void printPipe(const Pipe& pipe) {
-    cout << "--- Труба ---\n"
-        << "Отметка: " << pipe.markName << "\n"
-        << "Длина, км: " << pipe.lengthKm << "\n"
-        << "Диаметр, мм: " << pipe.diameterMm << "\n"
-        << "В ремонте: " << (pipe.underRepair ? "да" : "нет") << "\n";
-}
-
-void editPipeRepairFlag(Pipe& pipe) {
-    pipe.underRepair = readYesNo("Установить признак 'в ремонте'? (1-да/0-нет): ");
+void editPipeRepairFlag(Pipe& pipe)
+{
+    pipe.setUnderRepair(readYesNo("Установить признак 'в ремонте'? (1-да/0-нет): "));
     cout << "Признак обновлен.\n";
 }
 
-void inputStation(CompressorStation& station) {
-    station.name = readLine("Название КС: ");
-    station.shopCount = readNonNegative("Количество цехов: ");
-    station.shopInWork = readIntInRange("Количество цехов в работе (0.." + to_string(station.shopCount) + "): ",
-        0, station.shopCount);
-    station.stationClass = readNonNegative("Класс станции: ");
-}
-
-void printStation(const CompressorStation& station) {
-    cout << "--- КС ---\n"
-        << "Название: " << station.name << "\n"
-        << "Цехов всего: " << station.shopCount << "\n"
-        << "Цехов в работе: " << station.shopInWork << "\n"
-        << "Класс станции: " << station.stationClass << "\n";
-}
-
-void editStationShops(CompressorStation& station) {
-    cout << "1. Запустить цех\n2. Остановить цех\n0. Назад\n";
-    int choice = readIntInRange("Выберите действие: ", 0, 2);
-    if (choice == 1) {
-        if (station.shopInWork < station.shopCount) {
-            ++station.shopInWork;
-            cout << "Цех запущен. В работе: " << station.shopInWork << "/" << station.shopCount << "\n";
-        }
-        else {
-            cout << "Все цехи уже в работе.\n";
-        }
+int readShopChangeCount(int available, bool start)
+{
+    if (available == 0) {
+        cout << (start ? "Все цехи уже в работе.\n" : "Нет работающих цехов.\n");
+        return 0;
     }
-    else if (choice == 2) {
-        if (station.shopInWork > 0) {
-            --station.shopInWork;
-            cout << "Цех остановлен. В работе: " << station.shopInWork << "/" << station.shopCount << "\n";
-        }
-        else {
-            cout << "Нет работающих цехов.\n";
-        }
-    }
+    string prompt = start ? "Количество цехов для запуска" : "Количество цехов для остановки";
+    return readNumber(prompt + " (1.." + to_string(available) + "): ", 1, available);
 }
 
-bool savePipeData(ofstream& out, bool pipeExists, const Pipe& pipe) {
+void changeStationShops(CompressorStation& station, bool start, int count)
+{
+    bool changed = start ? station.startShops(count) : station.stopShops(count);
+    if (changed)
+        cout << (start ? "Запущено цехов: " : "Остановлено цехов: ") << count << ". " << station << "\n";
+    else
+        cout << station << ". " << (start ? "Недостаточно свободныъ цехов." : "Недостаточно работающих цехов.") << "\n";
+}
+
+void editStationShops(CompressorStation& station)
+{
+    cout << "1. Запустить цехи\n2. Остановить цехи\n0. Назад\n";
+    int choice = readNumber("Выберите действие: ", 0, 2);
+    if (choice == 0)
+        return;
+    bool start = choice == 1;
+    int available = start ? station.getFreeShops() : station.getWorkingShops();
+    int count = readShopChangeCount(available, start);
+    if (count > 0)
+        changeStationShops(station, start, count);
+}
+
+bool savePipeData(ofstream& out, bool pipeExists, const Pipe& pipe)
+{
     if (pipeExists) {
-        out << "PIPE\n" << pipe.markName << "\n"
-            << pipe.lengthKm << " " << pipe.diameterMm << " " << pipe.underRepair << "\n";
+        out << "PIPE\n";
+        pipe.save(out);
     }
     else {
         out << "NOPIPE\n";
@@ -150,25 +63,21 @@ bool savePipeData(ofstream& out, bool pipeExists, const Pipe& pipe) {
     return out.good();
 }
 
-bool loadPipeData(ifstream& in, bool& pipeExists, Pipe& pipe) {
+bool loadPipeData(ifstream& in, bool& pipeExists, Pipe& pipe)
+{
     string tag;
-    getline(in, tag);
-    if (tag == "PIPE") {
-        getline(in, pipe.markName);
-        in >> pipe.lengthKm >> pipe.diameterMm >> pipe.underRepair;
-        in.ignore(numeric_limits<streamsize>::max(), '\n');
-        pipeExists = true;
-    }
-    else {
-        pipeExists = false;
-    }
+    in >> tag;
+    pipeExists = (tag == "PIPE");
+    if (pipeExists)
+        pipe.load(in);
     return in.good();
 }
 
-bool saveStationData(ofstream& out, bool stationExists, const CompressorStation& station) {
+bool saveStationData(ofstream& out, bool stationExists, const CompressorStation& station)
+{
     if (stationExists) {
-        out << "STATION\n" << station.name << "\n"
-            << station.shopCount << " " << station.shopInWork << " " << station.stationClass << "\n";
+        out << "STATION\n";
+        station.save(out);
     }
     else {
         out << "NOSTATION\n";
@@ -176,22 +85,18 @@ bool saveStationData(ofstream& out, bool stationExists, const CompressorStation&
     return out.good();
 }
 
-bool loadStationData(ifstream& in, bool& stationExists, CompressorStation& station) {
+bool loadStationData(ifstream& in, bool& stationExists, CompressorStation& station)
+{
     string tag;
-    getline(in, tag);
-    if (tag == "STATION") {
-        getline(in, station.name);
-        in >> station.shopCount >> station.shopInWork >> station.stationClass;
-        in.ignore(numeric_limits<streamsize>::max(), '\n');
-        stationExists = true;
-    }
-    else {
-        stationExists = false;
-    }
+    in >> tag;
+    stationExists = (tag == "STATION");
+    if (stationExists)
+        station.load(in);
     return in.good();
 }
 
-void printMenu() {
+void printMenu()
+{
     cout << "\n1. Добавить трубу\n"
         << "2. Добавить КС\n"
         << "3. Просмотр всех объектов\n"
@@ -202,7 +107,8 @@ void printMenu() {
         << "0. Выход\n";
 }
 
-int main() {
+int main()
+{
 #ifdef _WIN32   // поддержка русского языка
     SetConsoleOutputCP(CP_UTF8);
     SetConsoleCP(CP_UTF8);
@@ -215,23 +121,23 @@ int main() {
 
     while (true) {
         printMenu();
-        int choice = readIntInRange("Выберите действие: ", 0, 7);;
+        int choice = readNumber("Выберите действие: ", 0, 7);;
         
         switch (choice) {
         case 1:
             if (pipeExists && !readYesNo("Труба уже создана. Пересоздать? (1-да/0-нет): ")) break;
-            inputPipe(pipe);
+            pipe.readFromConsole();
             pipeExists = true;
             break;
         case 2:
             if (stationExists && !readYesNo("КС уже создана. Пересоздать?: (1-да/0-нет) ")) break;
-            inputStation(station);
+            station.readFromConsole();
             stationExists = true;
             break;
         case 3:
-            if (pipeExists) printPipe(pipe);
+            if (pipeExists) cout << pipe << "\n";
             else cout << "Труба еще не создана.\n";
-            if (stationExists) printStation(station);
+            if (stationExists) cout << station << "\n";
             else cout << "КС еще не создана.\n";
             break;
         case 4:
@@ -244,22 +150,18 @@ int main() {
             break;
         case 6: {
             ofstream out(dataFile);
-            if (out) {
-                (savePipeData(out, pipeExists, pipe));
-                (saveStationData(out, stationExists, station));
+            if (out && savePipeData(out, pipeExists, pipe) && saveStationData(out, stationExists, station))
                 cout << "Данные сохранены.\n";
-            }
-            else cout << "Ошибка сохранения данных.\n";
+            else
+                cout << "Ошибка сохранения данных.\n";
             break;
         }
         case 7: {
             ifstream in(dataFile);
-            if (in) {
-                (loadPipeData(in, pipeExists, pipe));
-                (loadStationData(in, stationExists, station));
+            if (in && loadPipeData(in, pipeExists, pipe) && loadStationData(in, stationExists, station))
                 cout << "Данные загружены.\n";
-            }
-            else cout << "Файл не найден.\n";
+            else
+                cout << "Ошибка загрузки данных.\n";
             break;
         }
         case 0:
