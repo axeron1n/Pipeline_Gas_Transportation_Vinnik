@@ -45,6 +45,21 @@ double readPositiveDouble(const string& prompt)
     return readNumber(prompt, numeric_limits<double>::min(), numeric_limits<double>::max());
 }
 
+set<int> readIdsFrom(const set<int>& allowedIds)
+{
+    set<int> ids;
+    while (true) {
+        int id = readNumber("Введите id (0 - завершить выбор): ",
+                            0, numeric_limits<int>::max());
+        if (id == 0)
+            return ids;
+        if (allowedIds.count(id) > 0)
+            ids.insert(id);
+        else
+            cout << "Можно указывать только id из найденных.\n";
+    }
+}
+
 bool readYesNo(const string& prompt)
 {
     return readNumber(prompt, 0, 1) == 1;

@@ -9,6 +9,7 @@ std::string readLine(const std::string& prompt);
 std::string readNonEmptyLine(const std::string& prompt);
 double readPositiveDouble(const std::string& prompt);
 bool readYesNo(const std::string& prompt);
+std::set<int> readIdsFrom(const std::set<int>& allowedIds);
 bool readObjectHeader(std::istream& in, int& id, std::string& name);
 
 template <typename T>

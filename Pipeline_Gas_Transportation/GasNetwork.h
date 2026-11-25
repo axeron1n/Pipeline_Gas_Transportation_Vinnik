@@ -17,6 +17,9 @@ public:
     bool removePipe(int id);
     bool removeStation(int id);
 
+    void setPipesUnderRepair(const std::set<int>& ids, bool underRepair);
+    void removePipes(const std::set<int>& ids);
+
     const std::unordered_map<int, Pipe>& getPipes() const;
     const std::unordered_map<int, CompressorStation>& getStations() const;
 

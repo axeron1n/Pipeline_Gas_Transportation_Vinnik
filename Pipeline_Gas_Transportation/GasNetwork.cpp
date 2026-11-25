@@ -38,6 +38,18 @@ bool GasNetwork::removeStation(int id)
     return stations.erase(id) > 0;
 }
 
+void GasNetwork::setPipesUnderRepair(const set<int>& ids, bool underRepair)
+{
+    for (int id : ids)
+        pipes.at(id).setUnderRepair(underRepair);
+}
+
+void GasNetwork::removePipes(const set<int>& ids)
+{
+    for (int id : ids)
+        pipes.erase(id);
+}
+
 const unordered_map<int, Pipe>& GasNetwork::getPipes() const
 {
     return pipes;

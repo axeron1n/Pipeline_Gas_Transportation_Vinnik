@@ -1,5 +1,6 @@
 ﻿#include "GasNetwork.h"
 #include "utils.h"
+#include <algorithm>
 #include <iostream>
 #include <limits>
 #include <string>
@@ -124,7 +125,42 @@ void deleteStation(GasNetwork& network)
         cout << "КС id=" << id << " удалена.\n";
 }
 
-void searchPipes(const GasNetwork& network)
+bool chooseFoundIds(set<int>& ids)
+{
+    cout << "1. Все найденные\n2. Выбрать по id\n0. Отмена\n";
+    int choice = readNumber("Применить к: ", 0, 2);
+    if (choice == 2)
+        ids = readIdsFrom(ids);
+    return choice != 0 && !ids.empty();
+}
+
+bool confirmBatchDeletion(const string& kind, size_t count)
+{
+    if (readYesNo("К удалению выбрано " + kind + ": " + to_string(count) + ". Удалить? (1-да/0-нет): "))
+        return true;
+    cout << "Удаление отменено.\n";
+    return false;
+}
+
+void editPipesBatch(GasNetwork& network, set<int>& ids)
+{
+    cout << "Пакетное редактирование найденных труб:\n"
+         << "1. Изменить признак «в ремонте»\n2. Удалить\n0. Назад\n";
+    int action = readNumber("Выберите действие: ", 0, 2);
+    if (action == 0 || !chooseFoundIds(ids))
+        return;
+
+    if (action == 1) {
+        network.setPipesUnderRepair(ids, readYesNo("Труба в ремонте? (1-да/0-нет): "));
+        cout << "Изменено труб: " << ids.size() << "\n";
+    }
+    else if (confirmBatchDeletion("труб", ids.size())) {
+        network.removePipes(ids);
+        cout << "Удалено труб: " << ids.size() << "\n";
+    }
+}
+
+void searchPipes(GasNetwork& network)
 {
     cout << "Поиск труб:\n1. По названию\n2. По признаку «в ремонте»\n0. Назад\n";
     int choice = readNumber("Выберите фильтр: ", 0, 2);
@@ -137,9 +173,54 @@ void searchPipes(const GasNetwork& network)
         ids = network.findPipesByRepair(readYesNo("Искать трубы в ремонте? (1-да/0-нет): "));
     cout << "Найдено труб: " << ids.size() << "\n";
     printObjects(network.getPipes(), ids);
+    if (!ids.empty())
+        editPipesBatch(network, ids);
 }
 
-void searchStations(const GasNetwork& network)
+void deleteStationsBatch(GasNetwork& network, const set<int>& ids)
+{
+    if (!confirmBatchDeletion("КС", ids.size()))
+        return;
+
+    for (int id : ids)
+        network.removeStation(id);
+    cout << "Удалено КС: " << ids.size() << "\n";
+}
+
+void changeStationsShopsBatch(GasNetwork& network, const set<int>& ids, bool start)
+{
+    int available = 0;
+    for (int id : ids) {
+        const auto& station = network.getStation(id);
+        available = max(available, start ? station.getFreeShops() : station.getWorkingShops());
+    }
+
+    int count = readShopChangeCount(available, start);
+    if (count == 0)
+        return;
+
+    for (int id : ids)
+        changeStationShops(network.getStation(id), start, count);
+}
+
+void editStationsBatch(GasNetwork& network, set<int>& ids)
+{
+    cout << "Пакетное редактирование найденных КС:\n"
+         << "1. Запустить цехи на выбранных КС\n2. Остановить цехи на выбранных КС\n"
+         << "3. Удалить\n0. Назад\n";
+    int action = readNumber("Выберите действие: ", 0, 3);
+    if (action == 0 || !chooseFoundIds(ids))
+        return;
+
+    if (action == 3) {
+        deleteStationsBatch(network, ids);
+        return;
+    }
+
+    changeStationsShopsBatch(network, ids, action == 1);
+}
+
+void searchStations(GasNetwork& network)
 {
     cout << "Поиск КС:\n1. По названию\n2. По проценту незадействованных цехов\n0. Назад\n";
     int choice = readNumber("Выберите фильтр: ", 0, 2);
@@ -158,6 +239,8 @@ void searchStations(const GasNetwork& network)
 
     cout << "Найдено КС: " << ids.size() << "\n";
     printObjects(network.getStations(), ids);
+    if (!ids.empty())
+        editStationsBatch(network, ids);
 }
 
 void saveData(const GasNetwork& network)
@@ -187,8 +270,8 @@ void printMenu()
         << "5. Редактировать КС\n"
         << "6. Удалить трубу\n"
         << "7. Удалить КС\n"
-        << "8. Поиск труб\n"
-        << "9. Поиск КС\n"
+        << "8. Поиск и пакетное редактирование труб\n"
+        << "9. Поиск и пакетное редактирование КС\n"
         << "10. Сохранить\n"
         << "11. Загрузить\n"
         << "0. Выход\n";
